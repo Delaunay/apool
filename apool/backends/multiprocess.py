@@ -118,7 +118,7 @@ class MultiprocessPool(Pool):
         10
         
         """
-        return self.pool.apply_async(fun, args, kwds)
+        return _Future(self.pool.apply_async(fun, args, kwds))
 
     def map(self, func, iterable):
         """
@@ -160,7 +160,7 @@ class MultiprocessPool(Pool):
         ...     iter = p.imap(inc, (1, 2, 3, 4)) 
         ...     list(iter)
         [2, 3, 4, 5]
-        
+
         """
         return self.pool.imap(func, iterable)
 
