@@ -18,9 +18,9 @@ Features
 
 * Backends
 
-    * Dask
-    * Multiprocess (standard python)
-    * Threading (standard python)
+  * Dask
+  * Multiprocess (standard python)
+  * Threading (standard python)
 
 
 Examples

@@ -9,8 +9,10 @@ class _ThreadFuture(Future):
     Examples
     --------
 
+    >>> from apool import Pool, Thread
     >>> from apool.testing import fun
-    >>> with ThreadPool(5) as p:
+
+    >>> with Pool(Thread, 5) as p:
     ...     future = p.apply_async(fun, (1, 2), dict(c=3, d=4))
     
     wait for the future to finish
@@ -52,22 +54,47 @@ class _ThreadFuture(Future):
         return self.future.exception() is None
 
 
-class _MultiFuture:
-    def __init__(self, futures):
-        self.futures = futures
+class ThreadExecutor(Executor):
+    
+    def __init__(self, n_workers):
+        self.exec = ThreadPoolExecutor(n_workers)
 
-    def get(self):
-        return [f.get() for f in self.futures]
+    def submit(self, fn, /, *args, **kwargs):
+        """
 
-    def __iter__(self):
-        return self
+        Examples
+        --------
 
-    def __next__(self):
-        if not self.futures:
-            raise StopIteration()
-            
-        f = self.futures.pop(0)
-        return f.get()
+        >>> from apool import Executor, Thread
+        >>> from apool.testing import fun
+
+        >>> with Executor(Thread, 5) as p:
+        ...     future = p.submit(fun, 1, 2, c=3, d=4) 
+        ...     future.get()
+        10
+        
+        """
+        return _ThreadFuture(self.exec.submit(fn, *args, **kwargs))
+
+    def map(self, func, *iterables, timeout=None, chunksize=1):
+        """
+
+        Examples
+        --------
+
+        >>> from apool import Executor, Thread
+        >>> from apool.testing import inc
+
+        >>> with Executor(Thread, 5) as p:
+        ...     iter = p.imap(inc, 1, 2, 3, 4) 
+        ...     list(iter)
+        [2, 3, 4, 5]
+        
+        """
+        return self.exec.map(func, *iterables, timeout=timeout, chunksize=chunksize)
+
+    def shutdown(self, wait=True, *, cancel_futures=False):
+        return self.exec.shutdown(wait=wait, cancel_futures=cancel_futures)
 
 
 class ThreadPool(Pool):
@@ -76,28 +103,16 @@ class ThreadPool(Pool):
     def __init__(self, n_workers):
         self.pool = ThreadPoolExecutor(n_workers)
 
-    def apply(self, fun, args, kwds=None):
-        """
-
-        Examples
-        --------
-
-        >>> from apool.testing import fun
-        >>> with ThreadPool(5) as p:
-        ...     p.apply(fun, (1, 2), dict(c=3, d=4)) 
-        10
-        
-        """
-        return self.apply_async(fun, args, kwds).get()
-
     def apply_async(self, fun, args, kwds=None) -> Future:
         """
 
         Examples
         --------
 
+        >>> from apool import Pool, Thread
         >>> from apool.testing import fun
-        >>> with ThreadPool(5) as p:
+
+        >>> with Pool(Thread, 5) as p:
         ...     future = p.apply_async(fun, (1, 2), dict(c=3, d=4)) 
         ...     future.get()
         10
@@ -107,79 +122,6 @@ class ThreadPool(Pool):
             kwds = dict()
         
         return _ThreadFuture(self.pool.submit(fun, *args, **kwds))
-
-    def map(self, func, iterable):
-        """
-
-        Examples
-        --------
-
-        >>> from apool.testing import inc
-        >>> with ThreadPool(5) as p:
-        ...     p.map(inc, (1, 2, 3, 4)) 
-        [2, 3, 4, 5]
-        
-        """
-        return [self.apply(func, (arg,)) for arg in iterable]
-
-    def map_async(self, func, iterable):
-        """
-
-        Examples
-        --------
- 
-        >>> from apool.testing import inc
-        >>> with ThreadPool(5) as p:
-        ...     future = p.map_async(inc, (1, 2, 3, 4)) 
-        ...     future.get()
-        [2, 3, 4, 5]
-        
-        """
-        return _MultiFuture([self.apply_async(func, (arg,)) for arg in iterable])
-
-    def imap(self, func, iterable):
-        """
-
-        Examples
-        --------
-
-        >>> from apool.testing import inc
-        >>> with ThreadPool(5) as p:
-        ...     iter = p.imap(inc, (1, 2, 3, 4)) 
-        ...     list(iter)
-        [2, 3, 4, 5]
-
-        """
-        return self.map_async(func, iterable)
-
-    def starmap(self, func, iterable):
-        """
-
-        Examples
-        --------
-
-        >>> from apool.testing import add
-        >>> with ThreadPool(5) as p:
-        ...     p.starmap(add, [(1, 2), (4, 5)]) 
-        [3, 9]
-        
-        """
-        return [self.apply(func, args) for args in iterable]
-
-    def starmap_async(self, func, iterable):
-        """
-
-        Examples
-        --------
-
-        >>> from apool.testing import add
-        >>> with ThreadPool(5) as p:
-        ...     future = p.starmap_async(add, [(1, 2), (4, 5)]) 
-        ...     future.get()
-        [3, 9]
-        
-        """
-        return _MultiFuture([self.apply_async(func, args) for args in iterable])
 
     def close(self):
         self.pool.shutdown()

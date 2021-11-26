@@ -23,8 +23,10 @@ class _Future:
     Examples
     --------
 
+    >>> from apool import Pool, Process
     >>> from apool.testing import fun
-    >>> with MultiprocessPool(5) as p:
+
+    >>> with Pool(Process, 5) as p:
     ...     future = p.apply_async(fun, (1, 2), dict(c=3, d=4))
     
     wait for the future to finish
@@ -87,7 +89,50 @@ class _Pool(PyPool):
         return _Process(*args, **kwds)
 
 
-class MultiprocessPool(Pool):
+class ProcessExecutor(Executor):
+    
+    def __init__(self, n_workers):
+        self.pool = _Pool(n_workers)
+
+    def submit(self, fn, /, *args, **kwargs):
+        """
+
+        Examples
+        --------
+
+        >>> from apool import Executor, Process
+        >>> from apool.testing import fun
+
+        >>> with Executor(Process, 5) as p:
+        ...     future = p.submit(fun, 1, 2, c=3, d=4) 
+        ...     future.get()
+        10
+        
+        """
+        return _Future(self.pool.apply_async(fn, args, kwds=kwargs))
+
+    def map(self, func, *iterables, timeout=None, chunksize=1):
+        """
+
+        Examples
+        --------
+
+        >>> from apool import Executor, Process
+        >>> from apool.testing import inc
+        
+        >>> with Executor(Process, 5) as p:
+        ...     iter = p.imap(inc, 1, 2, 3, 4) 
+        ...     list(iter)
+        [2, 3, 4, 5]
+        
+        """
+        return self.pool.imap(func, iterables, chunksize=chunksize)
+
+    def shutdown(self, wait=True, *, cancel_futures=False):
+        return self.pool.terminate()
+
+
+class ProcessPool(Pool):
     def __init__(self, n_workers):
         self.pool = _Pool(n_workers)
 
@@ -97,8 +142,10 @@ class MultiprocessPool(Pool):
         Examples
         --------
 
+        >>> from apool import Pool, Process
         >>> from apool.testing import fun
-        >>> with MultiprocessPool(5) as p:
+
+        >>> with Pool(Process, 5) as p:
         ...     p.apply(fun, (1, 2), dict(c=3, d=4)) 
         10
         
@@ -111,8 +158,10 @@ class MultiprocessPool(Pool):
         Examples
         --------
 
+        >>> from apool import Pool, Process
         >>> from apool.testing import fun
-        >>> with MultiprocessPool(5) as p:
+
+        >>> with Pool(Process, 5) as p:
         ...     future = p.apply_async(fun, (1, 2), dict(c=3, d=4)) 
         ...     future.get()
         10
@@ -126,8 +175,10 @@ class MultiprocessPool(Pool):
         Examples
         --------
 
+        >>> from apool import Pool, Process
         >>> from apool.testing import inc
-        >>> with MultiprocessPool(5) as p:
+
+        >>> with Pool(Process, 5) as p:
         ...     p.map(inc, (1, 2, 3, 4)) 
         [2, 3, 4, 5]
         
@@ -140,8 +191,10 @@ class MultiprocessPool(Pool):
         Examples
         --------
 
+        >>> from apool import Pool, Process
         >>> from apool.testing import inc
-        >>> with MultiprocessPool(5) as p:
+
+        >>> with Pool(Process, 5) as p:
         ...     future = p.map_async(inc, (1, 2, 3, 4)) 
         ...     future.get()
         [2, 3, 4, 5]
@@ -155,8 +208,10 @@ class MultiprocessPool(Pool):
         Examples
         --------
 
+        >>> from apool import Pool, Process
         >>> from apool.testing import inc
-        >>> with MultiprocessPool(5) as p:
+
+        >>> with Pool(Process, 5) as p:
         ...     iter = p.imap(inc, (1, 2, 3, 4)) 
         ...     list(iter)
         [2, 3, 4, 5]
@@ -170,8 +225,10 @@ class MultiprocessPool(Pool):
         Examples
         --------
 
+        >>> from apool import Pool, Process
         >>> from apool.testing import add
-        >>> with MultiprocessPool(5) as p:
+
+        >>> with Pool(Process, 5) as p:
         ...     p.starmap(add, [(1, 2), (4, 5)]) 
         [3, 9]
         
@@ -184,8 +241,9 @@ class MultiprocessPool(Pool):
         Examples
         --------
 
+        >>> from apool import Pool, Process
         >>> from apool.testing import add
-        >>> with MultiprocessPool(5) as p:
+        >>> with Pool(Process, 5) as p:
         ...     future = p.starmap_async(add, [(1, 2), (4, 5)]) 
         ...     future.get()
         [3, 9]

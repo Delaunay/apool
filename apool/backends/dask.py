@@ -25,19 +25,30 @@ class _DaskFuture(Future):
     Examples
     --------
 
-    >>> with DaskPool(5):
+    >>> from apool import Pool, Dask
+    >>> from apool.testing import fun
+
+    >>> with Pool(Dask, 5):
     ...     future = p.apply_async(fun, (1, 2), dict(c=3, d=4))
-    ...     # wait for the future to finish
+    
+    wait for the future to finish
+    
     ...     future.wait()
-    ...     # check if the job has finished
+    
+    check if the job has finished
+    
     ...     future.ready()
     True
-    ...     # check if the job raised an exception or not
+    
+    check if the job raised an exception or not
+    
     ...     future.succesful()
     True
-    ...     # retrieve the result
+    
+    retrieve the result
     ...     future.get()
     10
+
 
     """
 
@@ -67,6 +78,56 @@ class _DaskFuture(Future):
         return self.future.exception() is None
 
 
+class DaskExecutor(Executor):
+    
+    def __init__(self, n_workers):
+        if HAS_DASK:
+            raise HAS_DASK
+
+        self.config = config
+        if client is None:
+            client = Client(**self.config)
+
+        self.client = client
+
+    def submit(self, fn, /, *args, **kwargs):
+        """
+
+        Examples
+        --------
+
+        >>> from apool import Executor, Dask
+        >>> from apool.testing import fun
+
+        >>> with Executor(Dask, 5) as p:
+        ...     future = p.submit(fun, 1, 2, c=3, d=4) 
+        ...     future.get()
+        10
+        
+        """
+        return _DaskFuture(self.client.submit(fn, *args, **kwargs))
+
+    def map(self, func, *iterables, timeout=None, chunksize=1):
+        """
+
+        Examples
+        --------
+
+        >>> from apool import Executor, Dask
+        >>> from apool.testing import inc
+
+        >>> with Executor(Dask, 5) as p:
+        ...     iter = p.map(inc, 1, 2, 3, 4) 
+        ...     list(iter)
+        [2, 3, 4, 5]
+        
+        """
+        return self.client.map(func, *iterables)
+
+    def shutdown(self, wait=True, *, cancel_futures=False):
+        return self.client.shutdown(wait=wait, cancel_futures=cancel_futures)
+
+
 class DaskPool(Pool):
     def __init__(self, n_workers=None):
         if HAS_DASK:
@@ -77,28 +138,6 @@ class DaskPool(Pool):
             client = Client(**self.config)
 
         self.client = client
-    
-    def __del__(self):
-        pass
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.terminate()
-
-    def apply(self, fun, args, kwds=None):
-        """
-
-        Examples
-        --------
-
-        >>> with Daskpool(5) as p:
-        ...     p.apply(fun, (1, 2), dict(c=3, d=4)) 
-        10
-
-        """
-        return self.apply_async(fun, args, kwds).get()
 
     def apply_async(self, fun, args, kwds=None) -> Future:
         """
@@ -106,104 +145,23 @@ class DaskPool(Pool):
         Examples
         --------
 
-        >>> with Daskpool(5) as p:
+        >>> from apool import Pool, Dask
+        >>> from apool.testing import fun
+
+        >>> with Pool(Dask, 5) as p:
         ...     future = p.apply_async(fun, (1, 2), dict(c=3, d=4)) 
         ...     future.get()
         10
         
         """
-        return _Future(self.client.submit(fun, *args, **kwargs, pure=False))
-
-    def map(self, func, iterable):
-        """
-
-        Examples
-        --------
-
-        >>> with Daskpool(5) as p:
-        ...     future = p.map(fun, (1, 2), dict(c=3, d=4)) 
-        ...     future.get()
-        10
-        
-        """
-        return self.map_async(func, iterable).get()
-
-    def map_async(self, func, iterable):
-        """
-
-        Examples
-        --------
-
-        >>> with Daskpool(5) as p:
-        ...     future = p.map_async(fun, (1, 2), dict(c=3, d=4)) 
-        ...     future.get()
-        10
-        
-        """
-        raise NotImplementedError()
-
-    def imap(self, func, iterable):
-        """
-
-        Examples
-        --------
-
-        >>> with Daskpool(5) as p:
-        ...     future = p.imap(fun, (1, 2), dict(c=3, d=4)) 
-        ...     future.get()
-        10
-        
-        """
-        return self.imap_async(func, iterable).get()
-
-    def imap_async(self, func, iterable):
-        """
-
-        Examples
-        --------
-
-        >>> with Daskpool(5) as p:
-        ...     future = p.imap_async(fun, (1, 2), dict(c=3, d=4)) 
-        ...     future.get()
-        10
-        
-        """
-        raise NotImplementedError()
-
-    def starmap(self, func, iterable):
-        """
-
-        Examples
-        --------
-
-        >>> with Daskpool(5) as p:
-        ...     future = p.starmap(fun, (1, 2), dict(c=3, d=4)) 
-        ...     future.get()
-        10
-        
-        """
-        return self.starmap_async(func, iterable).get()
-
-    def starmap_async(self, func, iterable):
-        """
-
-        Examples
-        --------
-
-        >>> with Daskpool(5) as p:
-        ...     future = p.starmap_async(fun, (1, 2), dict(c=3, d=4)) 
-        ...     future.get()
-        10
-        
-        """
-        raise NotImplementedError()
+        return _DaskFuture(self.client.submit(fun, *args, **kwargs, pure=False))
 
     def close(self):
-        pass
+        self.client.shutdown()
 
     def terminate(self):
-        pass
+        self.client.shutdown()
 
     def join(self):
-        pass
+        self.client.shutdown()
 
