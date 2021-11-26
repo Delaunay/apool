@@ -82,7 +82,7 @@ class Executor:
     def __exit__(self, exc_type, exc_value, traceback):
         self.shutdown()
 
-    def submit(self, fn, /, *args, **kwargs) -> FutureArray:
+    def submit(self, fn, *args, **kwargs) -> FutureArray:
         pass
 
     def map(self, func, *iterables, timeout=None, chunksize=1):

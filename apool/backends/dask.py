@@ -90,7 +90,7 @@ class DaskExecutor(Executor):
 
         self.client = client
 
-    def submit(self, fn, /, *args, **kwargs):
+    def submit(self, fn, *args, **kwargs):
         """
 
         Examples

@@ -94,7 +94,7 @@ class ProcessExecutor(Executor):
     def __init__(self, n_workers):
         self.pool = _Pool(n_workers)
 
-    def submit(self, fn, /, *args, **kwargs):
+    def submit(self, fn, *args, **kwargs):
         """
 
         Examples

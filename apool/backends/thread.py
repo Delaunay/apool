@@ -59,7 +59,7 @@ class ThreadExecutor(Executor):
     def __init__(self, n_workers):
         self.exec = ThreadPoolExecutor(n_workers)
 
-    def submit(self, fn, /, *args, **kwargs):
+    def submit(self, fn, *args, **kwargs):
         """
 
         Examples
