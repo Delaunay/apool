@@ -70,7 +70,6 @@ class FutureArray:
         return selected.get()
 
 
-
 class Executor:
     """Simple executor interface"""
 

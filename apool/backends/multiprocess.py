@@ -3,6 +3,7 @@ from multiprocessing.pool import AsyncResult
 from multiprocessing.pool import Pool as PyPool
 
 from apool.interfaces import Future, Pool, Executor
+from apool.utils import _couldpickle_exec
 
 
 class _Process(Process):
@@ -90,6 +91,7 @@ class _Pool(PyPool):
 
 
 class ProcessExecutor(Executor):
+    CLOUDPICKLE = True
     
     def __init__(self, n_workers):
         self.pool = _Pool(n_workers)
