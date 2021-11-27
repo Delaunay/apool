@@ -63,6 +63,9 @@ class FutureArray:
                     selected = future
                     break
 
+            if selected:
+                break
+
         self.futures.remove(selected)
         return selected.get()
 
@@ -205,7 +208,7 @@ class Pool:
         >>> from apool.testing import inc
 
         >>> with Pool(Thread, 5) as p:
-        ...     iter = p.imap(inc, (1, 2, 3, 4)) 
+        ...     iter = p.imap_unordered(inc, (1, 2, 3, 4)) 
         ...     sorted(list(iter))
         [2, 3, 4, 5]
 
