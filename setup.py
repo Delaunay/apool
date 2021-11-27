@@ -13,5 +13,4 @@ if __name__ == '__main__':
             'apool.backends'
         ],
         setup_requires=['setuptools'],
-        tests_require=['pytest', 'flake8', 'codecov', 'pytest-cov'],
     )

@@ -2,4 +2,4 @@ pytest
 pytest-cov
 codecov
 coverage
-
+dask[distributed]
