@@ -1,8 +1,18 @@
 .. include:: ../README.rst
 
 .. toctree::
-   :caption: API
+   :caption: Interfaces
    :maxdepth: 1
+ 
+   interfaces/array
+   interfaces/future
+   interfaces/executor 
+   interfaces/pool
 
-   interfaces/index
-   backends/index
+
+.. toctree::
+   :caption: Backends
+   
+   backends/dask
+   backends/process 
+   backends/thread

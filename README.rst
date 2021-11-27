@@ -14,10 +14,13 @@ API and with their respective Futures. This library brings them together.
    pip install apool
 
 
-
 .. image:: https://codecov.io/gh/Delaunay/apool/branch/main/graph/badge.svg?token=gQo0w4KQBV
    :target: https://codecov.io/gh/Delaunay/apool
-    
+
+
+.. image:: https://readthedocs.org/projects/apool/badge/?version=latest
+   :target: https://apool.readthedocs.io/en/latest/?badge=latest
+   :alt: Documentation Status
 
 Features
 --------
