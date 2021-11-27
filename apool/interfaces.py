@@ -23,7 +23,7 @@ class Future:
 class FutureArray:
     """Arrays of Futures"""
 
-    def __init__(self, futures, ordered=False):
+    def __init__(self, futures, ordered=True):
         self.futures = futures
         self.ordered = ordered
 
@@ -37,6 +37,7 @@ class FutureArray:
     def __next__(self):
         if self.ordered:
             return self.ordered_get()
+        
         return self.unordered_get()
         
     def ordered_get(self):
@@ -54,7 +55,7 @@ class FutureArray:
 
         selected = None
 
-        while True:
+        while self.futures:
             self.futures[0].wait(0.01)
 
             for future in self.futures:
@@ -83,13 +84,31 @@ class Executor:
         self.shutdown()
 
     def submit(self, fn, *args, **kwargs) -> FutureArray:
-        pass
+        raise NotImplementedError()
 
     def map(self, func, *iterables, timeout=None, chunksize=1):
-        pass
+        """
+
+        Examples
+        --------
+
+        >>> from apool import Executor, Thread
+        >>> from apool.testing import add
+
+        >>> with Executor(Thread, 5) as p:
+        ...     iter = p.map(add, [1, 2, 3, 4], [1, 2, 3, 4]) 
+        ...     list(iter)
+        [2, 4, 6, 8]
+        
+        """
+        return self.map_async(func, *iterables, timeout=timeout, chunksize=chunksize).get()
+    
+    def map_async(self, func, *iterables, timeout=None, chunksize=1):
+        futures = [self.submit(func, *args) for args in zip(*iterables)]
+        return FutureArray(futures)
 
     def shutdown(self, wait=True, *, cancel_futures=False):
-        pass
+        raise NotImplementedError()
 
 
 class Pool:
@@ -113,8 +132,10 @@ class Pool:
         Examples
         --------
 
+        >>> from apool import Pool, Thread
         >>> from apool.testing import fun
-        >>> with ThreadPool(5) as p:
+
+        >>> with Pool(Thread, 5) as p:
         ...     p.apply(fun, (1, 2), dict(c=3, d=4)) 
         10
         
@@ -130,8 +151,10 @@ class Pool:
         Examples
         --------
 
+        >>> from apool import Pool, Thread
         >>> from apool.testing import inc
-        >>> with ThreadPool(5) as p:
+
+        >>> with Pool(Thread, 5) as p:
         ...     p.map(inc, (1, 2, 3, 4)) 
         [2, 3, 4, 5]
         
@@ -144,8 +167,10 @@ class Pool:
         Examples
         --------
  
+        >>> from apool import Pool, Thread
         >>> from apool.testing import inc
-        >>> with ThreadPool(5) as p:
+
+        >>> with Pool(Thread, 5) as p:
         ...     future = p.map_async(inc, (1, 2, 3, 4)) 
         ...     future.get()
         [2, 3, 4, 5]
@@ -159,8 +184,10 @@ class Pool:
         Examples
         --------
 
+        >>> from apool import Pool, Thread
         >>> from apool.testing import inc
-        >>> with ThreadPool(5) as p:
+
+        >>> with Pool(Thread, 5) as p:
         ...     iter = p.imap(inc, (1, 2, 3, 4)) 
         ...     list(iter)
         [2, 3, 4, 5]
@@ -174,8 +201,10 @@ class Pool:
         Examples
         --------
 
+        >>> from apool import Pool, Thread
         >>> from apool.testing import inc
-        >>> with ThreadPool(5) as p:
+
+        >>> with Pool(Thread, 5) as p:
         ...     iter = p.imap(inc, (1, 2, 3, 4)) 
         ...     sorted(list(iter))
         [2, 3, 4, 5]
@@ -189,8 +218,10 @@ class Pool:
         Examples
         --------
 
+        >>> from apool import Pool, Thread
         >>> from apool.testing import add
-        >>> with ThreadPool(5) as p:
+
+        >>> with Pool(Thread, 5) as p:
         ...     p.starmap(add, [(1, 2), (4, 5)]) 
         [3, 9]
         
@@ -203,8 +234,10 @@ class Pool:
         Examples
         --------
 
+        >>> from apool import Pool, Thread
         >>> from apool.testing import add
-        >>> with ThreadPool(5) as p:
+
+        >>> with Pool(Thread, 5) as p:
         ...     future = p.starmap_async(add, [(1, 2), (4, 5)]) 
         ...     future.get()
         [3, 9]

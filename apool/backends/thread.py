@@ -1,6 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor, TimeoutError, wait
 
-from apool.interfaces import Future, Pool
+from apool.interfaces import Future, Pool, Executor
 
 
 class _ThreadFuture(Future):
@@ -83,12 +83,12 @@ class ThreadExecutor(Executor):
         --------
 
         >>> from apool import Executor, Thread
-        >>> from apool.testing import inc
+        >>> from apool.testing import add
 
         >>> with Executor(Thread, 5) as p:
-        ...     iter = p.imap(inc, 1, 2, 3, 4) 
+        ...     iter = p.map(add, [1, 2, 3, 4], [1, 2, 3, 4]) 
         ...     list(iter)
-        [2, 3, 4, 5]
+        [2, 4, 6, 8]
         
         """
         return self.exec.map(func, *iterables, timeout=timeout, chunksize=chunksize)

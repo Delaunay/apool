@@ -2,7 +2,7 @@ import traceback
 from multiprocessing import TimeoutError as PyTimeoutError
 from multiprocessing import Value
 
-from apool.interfaces import Future, Pool
+from apool.interfaces import Future, Pool, Executor, FutureArray
 
 try:
     from dask.distributed import (
@@ -28,7 +28,7 @@ class _DaskFuture(Future):
     >>> from apool import Pool, Dask
     >>> from apool.testing import fun
 
-    >>> with Pool(Dask, 5):
+    >>> with Pool(Dask, 5) as p:
     ...     future = p.apply_async(fun, (1, 2), dict(c=3, d=4))
     
     wait for the future to finish
@@ -80,7 +80,7 @@ class _DaskFuture(Future):
 
 class DaskExecutor(Executor):
     
-    def __init__(self, n_workers):
+    def __init__(self, n_workers, client=None, **config):
         if HAS_DASK:
             raise HAS_DASK
 
@@ -107,29 +107,29 @@ class DaskExecutor(Executor):
         """
         return _DaskFuture(self.client.submit(fn, *args, **kwargs))
 
-    def map(self, func, *iterables, timeout=None, chunksize=1):
+    def map_async(self, func, *iterables, timeout=None, chunksize=1):
         """
 
         Examples
         --------
 
         >>> from apool import Executor, Dask
-        >>> from apool.testing import inc
+        >>> from apool.testing import add
 
         >>> with Executor(Dask, 5) as p:
-        ...     iter = p.map(inc, 1, 2, 3, 4) 
-        ...     list(iter)
-        [2, 3, 4, 5]
+        ...     futures = p.map_async(add, [1, 2, 3, 4], [1, 2, 3, 4]) 
+        ...     list(futures.get())
+        [2, 4, 6, 8]
         
         """
-        return self.client.map(func, *iterables)
+        return FutureArray([_DaskFuture(f) for f in self.client.map(func, *iterables)])
 
     def shutdown(self, wait=True, *, cancel_futures=False):
-        return self.client.shutdown(wait=wait, cancel_futures=cancel_futures)
+        return self.client.shutdown()
 
 
 class DaskPool(Pool):
-    def __init__(self, n_workers=None):
+    def __init__(self, n_workers=None, client=None, **config):
         if HAS_DASK:
             raise HAS_DASK
 
@@ -154,7 +154,10 @@ class DaskPool(Pool):
         10
         
         """
-        return _DaskFuture(self.client.submit(fun, *args, **kwargs, pure=False))
+        if kwds is None:
+            kwds = dict()
+        
+        return _DaskFuture(self.client.submit(fun, *args, **kwds, pure=False))
 
     def close(self):
         self.client.shutdown()

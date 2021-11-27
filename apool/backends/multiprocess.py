@@ -2,7 +2,7 @@ from multiprocessing import Manager, Process
 from multiprocessing.pool import AsyncResult
 from multiprocessing.pool import Pool as PyPool
 
-from apool.interfaces import Future, Pool
+from apool.interfaces import Future, Pool, Executor
 
 
 class _Process(Process):
@@ -111,22 +111,22 @@ class ProcessExecutor(Executor):
         """
         return _Future(self.pool.apply_async(fn, args, kwds=kwargs))
 
-    def map(self, func, *iterables, timeout=None, chunksize=1):
+    def map_async(self, func, *iterables, timeout=None, chunksize=1):
         """
 
         Examples
         --------
 
         >>> from apool import Executor, Process
-        >>> from apool.testing import inc
+        >>> from apool.testing import add
         
         >>> with Executor(Process, 5) as p:
-        ...     iter = p.imap(inc, 1, 2, 3, 4) 
+        ...     iter = p.map(add, [1, 2, 3, 4], [1, 2, 3, 4]) 
         ...     list(iter)
-        [2, 3, 4, 5]
+        [2, 4, 6, 8]
         
         """
-        return self.pool.imap(func, iterables, chunksize=chunksize)
+        return self.pool.starmap_async(func, zip(*iterables), chunksize=chunksize)
 
     def shutdown(self, wait=True, *, cancel_futures=False):
         return self.pool.terminate()
