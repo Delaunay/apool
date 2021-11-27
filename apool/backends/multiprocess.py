@@ -1,9 +1,10 @@
 from multiprocessing import Manager, Process
 from multiprocessing.pool import AsyncResult
 from multiprocessing.pool import Pool as PyPool
+import pickle
 
 from apool.interfaces import Future, Pool, Executor
-from apool.utils import _couldpickle_exec
+from apool.utils import _cloudpickle, _payload
 
 
 class _Process(Process):
@@ -92,7 +93,7 @@ class _Pool(PyPool):
 
 class ProcessExecutor(Executor):
     CLOUDPICKLE = True
-    
+
     def __init__(self, n_workers):
         self.pool = _Pool(n_workers)
 
@@ -111,48 +112,21 @@ class ProcessExecutor(Executor):
         10
         
         """
+        if ProcessPool.CLOUDPICKLE:
+            f = self.pool.apply_async(_cloudpickle, [_payload(fn, args, kwargs)])
+            return _Future(f, True)
+        
         return _Future(self.pool.apply_async(fn, args, kwds=kwargs))
-
-    def map_async(self, func, *iterables, timeout=None, chunksize=1):
-        """
-
-        Examples
-        --------
-
-        >>> from apool import Executor, Process
-        >>> from apool.testing import add
-        
-        >>> with Executor(Process, 5) as p:
-        ...     iter = p.map(add, [1, 2, 3, 4], [1, 2, 3, 4]) 
-        ...     list(iter)
-        [2, 4, 6, 8]
-        
-        """
-        return self.pool.starmap_async(func, zip(*iterables), chunksize=chunksize)
 
     def shutdown(self, wait=True, *, cancel_futures=False):
         return self.pool.terminate()
 
 
 class ProcessPool(Pool):
+    CLOUDPICKLE = True
+    
     def __init__(self, n_workers):
         self.pool = _Pool(n_workers)
-
-    def apply(self, fun, args, kwds=None):
-        """
-
-        Examples
-        --------
-
-        >>> from apool import Pool, Process
-        >>> from apool.testing import fun
-
-        >>> with Pool(Process, 5) as p:
-        ...     p.apply(fun, (1, 2), dict(c=3, d=4)) 
-        10
-        
-        """
-        return self.pool.apply(fun, args, kwds)
 
     def apply_async(self, fun, args, kwds=None) -> Future:
         """
@@ -169,89 +143,14 @@ class ProcessPool(Pool):
         10
         
         """
+        if kwds is None:
+            kwds = dict()
+
+        if ProcessPool.CLOUDPICKLE:
+            f = self.pool.apply_async(_cloudpickle, [_payload(fun, args, kwds)])
+            return _Future(f, True)
+
         return _Future(self.pool.apply_async(fun, args, kwds))
-
-    def map(self, func, iterable):
-        """
-
-        Examples
-        --------
-
-        >>> from apool import Pool, Process
-        >>> from apool.testing import inc
-
-        >>> with Pool(Process, 5) as p:
-        ...     p.map(inc, (1, 2, 3, 4)) 
-        [2, 3, 4, 5]
-        
-        """
-        return self.pool.map(func, iterable)
-
-    def map_async(self, func, iterable):
-        """
-
-        Examples
-        --------
-
-        >>> from apool import Pool, Process
-        >>> from apool.testing import inc
-
-        >>> with Pool(Process, 5) as p:
-        ...     future = p.map_async(inc, (1, 2, 3, 4)) 
-        ...     future.get()
-        [2, 3, 4, 5]
-        
-        """
-        return self.pool.map_async(func, iterable)
-
-    def imap(self, func, iterable):
-        """
-
-        Examples
-        --------
-
-        >>> from apool import Pool, Process
-        >>> from apool.testing import inc
-
-        >>> with Pool(Process, 5) as p:
-        ...     iter = p.imap(inc, (1, 2, 3, 4)) 
-        ...     list(iter)
-        [2, 3, 4, 5]
-
-        """
-        return self.pool.imap(func, iterable)
-
-    def starmap(self, func, iterable):
-        """
-
-        Examples
-        --------
-
-        >>> from apool import Pool, Process
-        >>> from apool.testing import add
-
-        >>> with Pool(Process, 5) as p:
-        ...     p.starmap(add, [(1, 2), (4, 5)]) 
-        [3, 9]
-        
-        """
-        return self.pool.starmap(func, iterable)
-
-    def starmap_async(self, func, iterable):
-        """
-
-        Examples
-        --------
-
-        >>> from apool import Pool, Process
-        >>> from apool.testing import add
-        >>> with Pool(Process, 5) as p:
-        ...     future = p.starmap_async(add, [(1, 2), (4, 5)]) 
-        ...     future.get()
-        [3, 9]
-        
-        """
-        return self.pool.starmap_async(func, iterable)
 
     def close(self):
         self.pool.close()
