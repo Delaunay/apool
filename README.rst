@@ -1,9 +1,18 @@
 apool
 =====
 
-    One API to find them, One API to bring them, One API to rule them all
+.. image:: https://codecov.io/gh/Delaunay/apool/branch/main/graph/badge.svg?token=gQo0w4KQBV
+   :target: https://codecov.io/gh/Delaunay/apool
+
+.. image:: https://readthedocs.org/projects/apool/badge/?version=latest
+   :target: https://apool.readthedocs.io/en/latest/?badge=latest
+   :alt: Documentation Status
+
+
+One API to find them, One API to bring them, One API to rule them all
 
 Harmonize different concurrency and parallelism API into a single one.
+
 
 Python standard libaries implements Pool, Executors, each of them with a slightly different
 API and with their respective Futures. This library brings them together.
@@ -13,14 +22,6 @@ API and with their respective Futures. This library brings them together.
 
    pip install apool
 
-
-.. image:: https://codecov.io/gh/Delaunay/apool/branch/main/graph/badge.svg?token=gQo0w4KQBV
-   :target: https://codecov.io/gh/Delaunay/apool
-
-
-.. image:: https://readthedocs.org/projects/apool/badge/?version=latest
-   :target: https://apool.readthedocs.io/en/latest/?badge=latest
-   :alt: Documentation Status
 
 Features
 --------
