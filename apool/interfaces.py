@@ -210,7 +210,7 @@ class Pool:
         [2, 3, 4, 5]
 
         """
-        raise FutureArray([self.apply_async(func, (arg,)) for arg in iterable], False)
+        return FutureArray([self.apply_async(func, (arg,)) for arg in iterable], False)
 
     def starmap(self, func, iterable):
         """

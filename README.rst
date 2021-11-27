@@ -1,10 +1,12 @@
 apool
 =====
 
-One API to find them, One API to bring them, One API to rule them all
-
+    One API to find them, One API to bring them, One API to rule them all
 
 Harmonize different concurrency and parallelism API into a single one.
+
+Python standard libaries implements Pool, Executors, each of them with a slightly different
+API and with their respective Futures. This library brings them together.
 
 
 .. code-block:: bash
