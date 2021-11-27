@@ -94,7 +94,7 @@ class ThreadExecutor(Executor):
         return self.exec.map(func, *iterables, timeout=timeout, chunksize=chunksize)
 
     def shutdown(self, wait=True, *, cancel_futures=False):
-        return self.exec.shutdown(wait=wait, cancel_futures=cancel_futures)
+        return self.exec.shutdown(wait=wait)
 
 
 class ThreadPool(Pool):
